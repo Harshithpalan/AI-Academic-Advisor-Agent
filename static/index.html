@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Academic Advisor</title>
+<style>
+  :root {
+    --bg: #0f172a; --panel: #1e293b; --panel2: #263448; --text: #e2e8f0;
+    --muted: #94a3b8; --accent: #6366f1; --accent2: #818cf8; --ok: #34d399;
+    --warn: #fbbf24; --border: #334155;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  header { padding: 18px 28px; display: flex; align-items: center; gap: 14px; border-bottom: 1px solid var(--border); background: var(--panel); }
+  .logo { width: 38px; height: 38px; border-radius: 10px; background: linear-gradient(135deg, var(--accent), #a855f7); display: flex; align-items: center; justify-content: center; font-size: 20px; }
+  header h1 { font-size: 20px; font-weight: 600; }
+  header .sub { color: var(--muted); font-size: 13px; }
+  .stats { margin-left: auto; display: flex; gap: 20px; font-size: 13px; color: var(--muted); }
+  .stats b { color: var(--text); font-size: 15px; }
+  nav { display: flex; gap: 4px; padding: 10px 24px; background: var(--panel); border-bottom: 1px solid var(--border); }
+  nav button { background: none; border: none; color: var(--muted); padding: 8px 18px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; }
+  nav button.active { background: var(--accent); color: #fff; }
+  nav button:hover:not(.active) { background: var(--panel2); color: var(--text); }
+  main { max-width: 960px; margin: 24px auto; padding: 0 20px 40px; }
+  .tab { display: none; }
+  .tab.active { display: block; }
+
+  /* Chat */
+  #chatlog { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 20px; height: 480px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+  .msg { max-width: 78%; padding: 11px 15px; border-radius: 14px; font-size: 14.5px; line-height: 1.55; white-space: pre-wrap; }
+  .msg.user { align-self: flex-end; background: var(--accent); color: #fff; border-bottom-right-radius: 4px; }
+  .msg.bot { align-self: flex-start; background: var(--panel2); border-bottom-left-radius: 4px; }
+  .msg.bot b, .card b { color: var(--accent2); }
+  .msg ul { margin-left: 18px; }
+  .msg li { margin: 3px 0; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
+  .chip { background: var(--panel); border: 1px solid var(--border); color: var(--muted); padding: 7px 14px; border-radius: 999px; cursor: pointer; font-size: 13px; }
+  .chip:hover { border-color: var(--accent); color: var(--text); }
+  #chatbar { display: flex; gap: 10px; margin-top: 6px; }
+  #chatbar input { flex: 1; background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 13px 16px; color: var(--text); font-size: 14.5px; outline: none; }
+  #chatbar input:focus { border-color: var(--accent); }
+  #chatbar button { background: var(--accent); border: none; border-radius: 12px; padding: 0 22px; color: #fff; font-size: 15px; cursor: pointer; font-weight: 600; }
+
+  /* Cards & tables */
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 20px; margin-bottom: 16px; }
+  .card h3 { font-size: 15px; margin-bottom: 12px; color: var(--text); }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th { text-align: left; color: var(--muted); font-weight: 500; padding: 7px 10px; border-bottom: 1px solid var(--border); }
+  td { padding: 8px 10px; border-bottom: 1px solid #293548; }
+  tr:last-child td { border-bottom: none; }
+  .done { color: var(--ok); }
+  .pend { color: var(--muted); }
+  .badge { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 11.5px; font-weight: 600; }
+  .badge.ok { background: #064e3b; color: var(--ok); }
+  .badge.warn { background: #451a03; color: var(--warn); }
+  .bar { height: 8px; background: var(--panel2); border-radius: 99px; overflow: hidden; margin-top: 6px; }
+  .bar > div { height: 100%; background: linear-gradient(90deg, var(--accent), #a855f7); border-radius: 99px; }
+  input, select { background: var(--panel2); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 8px 10px; font-size: 13.5px; }
+  label { font-size: 13px; color: var(--muted); display: block; margin: 12px 0 4px; }
+  .btn { background: var(--accent); color: #fff; border: none; padding: 10px 20px; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 14px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 24px; }
+  .sem { margin-bottom: 18px; }
+  .sem h4 { color: var(--accent2); font-size: 14px; margin-bottom: 8px; }
+  .pill { display: inline-block; background: var(--panel2); border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; margin: 3px 4px 3px 0; font-size: 13px; }
+  .hint { color: var(--muted); font-size: 12.5px; margin-top: 10px; }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">🎓</div>
+  <div><h1>AI Academic Advisor</h1><div class="sub">Course planning · degree audit · GPA</div></div>
+  <div class="stats">
+    <div>GPA<br><b id="h-gpa">—</b></div>
+    <div>Credits<br><b id="h-cr">0 / 120</b></div>
+    <div>Progress<br><b id="h-pct">0%</b></div>
+  </div>
+</header>
+<nav>
+  <button class="active" data-tab="chat">💬 Chat</button>
+  <button data-tab="profile">👤 Profile</button>
+  <button data-tab="audit">📋 Degree Audit</button>
+  <button data-tab="plan">🗓️ Plan</button>
+</nav>
+<main>
+  <div class="tab active" id="tab-chat">
+    <div id="chatlog"></div>
+    <div class="chips">
+      <button class="chip" data-q="What should I take next?">What should I take next?</button>
+      <button class="chip" data-q="Show my degree progress">Degree progress</button>
+      <button class="chip" data-q="Build me a plan">Build me a plan</button>
+      <button class="chip" data-q="What's my GPA?">What's my GPA?</button>
+      <button class="chip" data-q="I'm interested in machine learning">I'm interested in ML</button>
+    </div>
+    <div id="chatbar">
+      <input id="chatinput" placeholder="Ask your advisor…" autocomplete="off">
+      <button id="send">Send</button>
+    </div>
+  </div>
+
+  <div class="tab" id="tab-profile">
+    <div class="card">
+      <h3>Student Profile</h3>
+      <div class="grid2">
+        <div><label>Name</label><input id="p-name" style="width:100%"></div>
+        <div><label>Max credits / semester</label><input id="p-max" type="number" min="6" max="21" value="16" style="width:100%"></div>
+        <div><label>Next term</label><select id="p-term" style="width:100%"><option value="fall">Fall</option><option value="spring">Spring</option></select></div>
+      </div>
+      <h3 style="margin-top:20px">Completed Courses <span class="hint">(select a grade for each course you've passed)</span></h3>
+      <div id="completed-list" style="max-height:320px;overflow-y:auto;margin-top:8px"></div>
+      <button class="btn" id="save-profile">Save Profile</button>
+      <span id="save-msg" style="color:var(--ok);margin-left:12px;font-size:13px"></span>
+    </div>
+  </div>
+
+  <div class="tab" id="tab-audit"><div id="audit-body"></div></div>
+  <div class="tab" id="tab-plan"><div id="plan-body"></div></div>
+</main>
+
+<script>
+let SID = localStorage.getItem('adv_sid') || '';
+async function ensureSession() {
+  if (!SID) {
+    const r = await fetch('/api/session', {method:'POST'});
+    SID = (await r.json()).session;
+    localStorage.setItem('adv_sid', SID);
+  }
+}
+const api = (p, opts) => fetch(p + (p.includes('?') ? '&' : '?') + 'session=' + SID, opts).then(r => r.json());
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+const md = s => esc(s)
+  .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
+  .replace(/\*(.+?)\*/g, '<i>$1</i>')
+  .replace(/^- (.+)$/gm, '<li>$1</li>')
+  .replace(/(<li>.*<\/li>\n?)+/g, m => '<ul>'+m+'</ul>')
+  .replace(/\n/g, '<br>');
+
+// ---------- tabs ----------
+document.querySelectorAll('nav button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('nav button').forEach(x => x.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  document.getElementById('tab-' + b.dataset.tab).classList.add('active');
+  if (b.dataset.tab === 'audit') loadAudit();
+  if (b.dataset.tab === 'plan') loadPlan();
+});
+
+// ---------- chat ----------
+const log = document.getElementById('chatlog');
+function addMsg(text, cls) {
+  const d = document.createElement('div');
+  d.className = 'msg ' + cls;
+  d.innerHTML = cls === 'bot' ? md(text) : esc(text);
+  log.appendChild(d); log.scrollTop = log.scrollHeight;
+}
+async function send(text) {
+  const msg = text || document.getElementById('chatinput').value.trim();
+  if (!msg) return;
+  document.getElementById('chatinput').value = '';
+  addMsg(msg, 'user');
+  const r = await api('/api/chat', {method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({session: SID, message: msg})});
+  addMsg(r.reply, 'bot');
+  refreshHeader();
+  if (r.action === 'audit') document.querySelector('[data-tab=audit]').click();
+  if (r.action === 'plan') document.querySelector('[data-tab=plan]').click();
+  if (r.action === 'recommend') {/* stay in chat; recs are in the reply */}
+}
+document.getElementById('send').onclick = () => send();
+document.getElementById('chatinput').addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
+document.querySelectorAll('.chip').forEach(c => c.onclick = () => send(c.dataset.q));
+
+// ---------- header ----------
+async function refreshHeader() {
+  const p = await api('/api/profile');
+  document.getElementById('h-gpa').textContent = p.gpa || '—';
+  document.getElementById('h-cr').textContent = p.credits_earned + ' / 120';
+  document.getElementById('h-pct').textContent = Math.round(100 * p.credits_earned / 120) + '%';
+}
+
+// ---------- profile ----------
+async function loadProfile() {
+  const [p, cat] = await Promise.all([api('/api/profile'), api('/api/catalog')]);
+  document.getElementById('p-name').value = p.name;
+  document.getElementById('p-max').value = p.max_credits;
+  document.getElementById('p-term').value = p.start_term;
+  const list = document.getElementById('completed-list');
+  list.innerHTML = '<table><tr><th>Course</th><th></th><th>Cr</th><th>Grade</th></tr>' +
+    cat.courses.map(c => `<tr><td><b>${c.code}</b></td><td>${c.title}</td><td>${c.credits}</td>
+      <td><select data-code="${c.code}"><option value="">—</option>` +
+      cat.grades.map(g => `<option ${p.completed[c.code]===g?'selected':''}>${g}</option>`).join('') +
+      '</select></td></tr>').join('') + '</table>';
+}
+document.getElementById('save-profile').onclick = async () => {
+  const completed = {};
+  document.querySelectorAll('#completed-list select').forEach(s => { if (s.value) completed[s.dataset.code] = s.value; });
+  await api('/api/profile', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({
+    session: SID, name: document.getElementById('p-name').value,
+    max_credits: +document.getElementById('p-max').value,
+    start_term: document.getElementById('p-term').value, completed})});
+  document.getElementById('save-msg').textContent = 'Saved ✓';
+  setTimeout(() => document.getElementById('save-msg').textContent = '', 2000);
+  refreshHeader();
+};
+
+// ---------- audit ----------
+async function loadAudit() {
+  const a = await api('/api/audit');
+  document.getElementById('audit-body').innerHTML =
+    `<div class="card"><h3>${a.degree} — ${a.percent}% complete (${a.credits_earned}/${a.total_required} credits · GPA ${a.gpa})</h3>
+     <div class="bar"><div style="width:${a.percent}%"></div></div></div>` +
+    a.requirements.map(r => `<div class="card"><h3>${r.label}
+      <span class="badge ${r.satisfied?'ok':'warn'}" style="float:right">${r.satisfied?'Complete':r.earned_credits+'/'+r.required_credits+' cr'}</span></h3>
+      ${r.courses.length ? '<table>' + r.courses.map(c =>
+        `<tr><td><b>${c.code}</b></td><td>${c.title}</td><td>${c.credits}</td>
+         <td class="${c.done?'done':'pend'}">${c.done ? (c.grade||'✓') : 'pending'}</td></tr>`).join('') + '</table>'
+      : '<div class="hint">No courses completed in this category yet.</div>'}</div>`).join('');
+}
+
+// ---------- plan ----------
+async function loadPlan() {
+  const {plan} = await api('/api/plan?semesters=6');
+  document.getElementById('plan-body').innerHTML =
+    `<div class="card"><h3>Suggested Schedule</h3>
+     <div class="hint">Greedy plan honoring prerequisites, term offerings, and your max-credit cap. Save your profile first for accuracy.</div></div>` +
+    plan.map(s => `<div class="card sem"><h4>${s.term} — Semester ${s.number} · ${s.credits} credits</h4>
+      ${s.courses.length ? s.courses.map(c => `<span class="pill"><b>${c.code}</b> ${c.title} (${c.credits})</span>`).join('') : '<span class="hint">No courses available this term.</span>'}</div>`).join('');
+}
+
+// ---------- init ----------
+(async () => {
+  await ensureSession();
+  await refreshHeader();
+  await loadProfile();
+  addMsg("Hi! I'm your AI academic advisor. Tell me what courses you've completed in the **Profile** tab, then ask me things like *\"What should I take next?\"* or *\"Build me a plan\"*.", 'bot');
+})();
+</script>
+</body>
+</html>
